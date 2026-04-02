@@ -48,6 +48,21 @@ const GraphVisualization3D: React.FC<GraphVisualizationProps> = ({ data }) => {
     links: data.edges.filter((edge: Edge) => edgeTypeFilter[edge.edge_type]),
   }), [data, edgeTypeFilter]);
 
+  const causalImpactRange = useMemo(() => {
+    const validImpacts = data.nodes
+      .map((node) => node.causal_impact)
+      .filter((impact): impact is number => typeof impact === 'number' && Number.isFinite(impact) && impact > 0);
+
+    if (validImpacts.length === 0) {
+      return null;
+    }
+
+    return {
+      min: Math.min(...validImpacts),
+      max: Math.max(...validImpacts),
+    };
+  }, [data.nodes]);
+
   const filteredEdgeWeightRange = useMemo(() => {
     const validWeights = filteredData.links
       .map((edge: Edge) => edge.weight)
@@ -189,7 +204,7 @@ const GraphVisualization3D: React.FC<GraphVisualizationProps> = ({ data }) => {
 
   // Node rendering - proper opacity handling for cluster dimming only
   const nodeThreeObjectMemo = useCallback((node: any) => {
-    const size = getNodeSize(node);
+    const size = getNodeSize(node, causalImpactRange);
     const color = getNodeColorLocal(node, selectedCluster);
 
     // Opacity: full unless cluster-selected and node is in another cluster
@@ -210,7 +225,7 @@ const GraphVisualization3D: React.FC<GraphVisualizationProps> = ({ data }) => {
 
     const material = getMaterial(color, opacity);
     return new THREE.Mesh(geometry, material);
-  }, [selectedCluster, nodeGeometries, getMaterial, getNodeColorLocal]);
+  }, [causalImpactRange, selectedCluster, nodeGeometries, getMaterial, getNodeColorLocal]);
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100vh', background: '#000011' }}>

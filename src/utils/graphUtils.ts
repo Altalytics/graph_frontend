@@ -30,6 +30,8 @@ export const edgeTypeLabels: Record<number, string> = {
 
 const MIN_EDGE_WIDTH = 1.2;
 const MAX_EDGE_WIDTH = 3.6;
+const MIN_NODE_SIZE = 8;
+const MAX_NODE_SIZE = 25;
 
 export const getEdgeWidth = (
   weight: unknown,
@@ -50,6 +52,27 @@ export const getEdgeWidth = (
   const clampedWeight = Math.max(0, Math.min(1, normalizedWeight));
 
   return MIN_EDGE_WIDTH + clampedWeight * (MAX_EDGE_WIDTH - MIN_EDGE_WIDTH);
+};
+
+export const getNormalizedCausalImpactSize = (
+  impact: unknown,
+  minImpact: number,
+  maxImpact: number,
+): number => {
+  const numericImpact = typeof impact === 'number' ? impact : Number(impact);
+
+  if (!Number.isFinite(numericImpact) || numericImpact <= 0) {
+    return MIN_NODE_SIZE;
+  }
+
+  if (!Number.isFinite(minImpact) || !Number.isFinite(maxImpact) || minImpact === maxImpact) {
+    return MIN_NODE_SIZE;
+  }
+
+  const normalizedImpact = (numericImpact - minImpact) / (maxImpact - minImpact);
+  const clampedImpact = Math.max(0, Math.min(1, normalizedImpact));
+
+  return MIN_NODE_SIZE + clampedImpact * (MAX_NODE_SIZE - MIN_NODE_SIZE);
 };
 
 export const getClusterDisplayName = (clusterId: string | number, metadata?: GraphData['metadata']): string => {
@@ -82,22 +105,27 @@ export const getNodeColor = (node: Node, selectedCluster: string | null = null):
     return 'rgba(200, 200, 200, 0.2)';
   }
   
-  // Use the pre-defined color palette, defaulting to unclustered color
+// Use the pre-defined color palette, defaulting to unclustered color
   return clusterColors[clusterKey] || clusterColors['-1'];
 };
 
 // Calculate node size based on causal_impact, with total_degree as fallback
-export const getNodeSize = (node: Node): number => {
-  const BASE_SIZE = 8; // Minimum size for nodes
-  const CAUSAL_IMPACT_SCALING = 10; // Controls how much larger impactful nodes get
+export const getNodeSize = (
+  node: Node,
+  causalImpactRange?: { min: number; max: number } | null,
+): number => {
+  const BASE_SIZE = MIN_NODE_SIZE; // Minimum size for nodes
   const DEGREE_SCALING = 0.5; // Use a smaller factor for degree fallback
   
   const impact = node.causal_impact;
   
   // Prioritize causal_impact if it's a valid, positive number
   if (impact && impact > 0) {
-    // Math.log1p is log(1 + x), which gracefully handles impact = 0
-    return BASE_SIZE + Math.log1p(impact) * CAUSAL_IMPACT_SCALING;
+    return getNormalizedCausalImpactSize(
+      impact,
+      causalImpactRange?.min ?? 0,
+      causalImpactRange?.max ?? 0,
+    );
   }
   
   // Fallback to total_degree if causal_impact is null, 0, or undefined

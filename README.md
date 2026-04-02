@@ -126,7 +126,7 @@ If `metadata.clusterNames` is present, the sidebar and selected-node panel use t
 ### Nodes
 
 - **Color**: Cluster membership (9 distinct colors, grey for unclustered)
-- **Size**: Based on `causal_impact` (falls back to `total_degree` if null/zero)
+- **Size**: Normalized from positive `causal_impact` values within the loaded dataset (falls back to `total_degree` if null/zero)
 - **Opacity**: Full opacity for selected cluster, 20% for others when filtering
 
 ### Edges
@@ -178,7 +178,7 @@ If `metadata.clusterNames` is present, the sidebar and selected-node panel use t
 ## Metrics Explained
 
 ### Causal Impact
-Primary metric for node sizing. Represents the node's influence on network dynamics. When null or zero, the visualization falls back to using `total_degree`.
+Primary metric for node sizing. Positive values are normalized within the loaded dataset so node sizes stay visually comparable across different files. When null or zero, the visualization falls back to using `total_degree`.
 
 ### Cluster Cohesion (0-1)
 Percentage of connections within the same cluster:
