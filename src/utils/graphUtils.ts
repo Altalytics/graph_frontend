@@ -28,6 +28,30 @@ export const edgeTypeLabels: Record<number, string> = {
   2: 'Mention',
 };
 
+const MIN_EDGE_WIDTH = 1.2;
+const MAX_EDGE_WIDTH = 3.6;
+
+export const getEdgeWidth = (
+  weight: unknown,
+  minWeight: number,
+  maxWeight: number,
+): number => {
+  const numericWeight = typeof weight === 'number' ? weight : Number(weight);
+
+  if (!Number.isFinite(numericWeight)) {
+    return MIN_EDGE_WIDTH;
+  }
+
+  if (!Number.isFinite(minWeight) || !Number.isFinite(maxWeight) || minWeight === maxWeight) {
+    return MIN_EDGE_WIDTH;
+  }
+
+  const normalizedWeight = (numericWeight - minWeight) / (maxWeight - minWeight);
+  const clampedWeight = Math.max(0, Math.min(1, normalizedWeight));
+
+  return MIN_EDGE_WIDTH + clampedWeight * (MAX_EDGE_WIDTH - MIN_EDGE_WIDTH);
+};
+
 export const getClusterDisplayName = (clusterId: string | number, metadata?: GraphData['metadata']): string => {
   const clusterKey = String(clusterId);
   const customName = metadata?.clusterNames?.[clusterKey]?.trim();

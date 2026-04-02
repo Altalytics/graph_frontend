@@ -3,7 +3,7 @@ import ForceGraph3D from 'react-force-graph-3d';
 import * as THREE from 'three';
 import InfoPanel from './InfoPanel';
 import Controls from './Controls';
-import { getNodeSize, getClusterStats, edgeTypeColors, clusterColors } from '../utils/graphUtils';
+import { getNodeSize, getClusterStats, edgeTypeColors, clusterColors, getEdgeWidth } from '../utils/graphUtils';
 import type { GraphData, Node, Edge } from '../types/graph';
 
 interface GraphVisualizationProps {
@@ -47,6 +47,21 @@ const GraphVisualization3D: React.FC<GraphVisualizationProps> = ({ data }) => {
     nodes: data.nodes,
     links: data.edges.filter((edge: Edge) => edgeTypeFilter[edge.edge_type]),
   }), [data, edgeTypeFilter]);
+
+  const filteredEdgeWeightRange = useMemo(() => {
+    const validWeights = filteredData.links
+      .map((edge: Edge) => edge.weight)
+      .filter((weight): weight is number => Number.isFinite(weight));
+
+    if (validWeights.length === 0) {
+      return null;
+    }
+
+    return {
+      min: Math.min(...validWeights),
+      max: Math.max(...validWeights),
+    };
+  }, [filteredData]);
 
   // Reusable geometries
   const nodeGeometries = useMemo(() => {
@@ -223,7 +238,11 @@ const GraphVisualization3D: React.FC<GraphVisualizationProps> = ({ data }) => {
         
         // Links always visible (no dynamic highlighting/dimming)
         linkColor={(link: any) => edgeTypeColors[link.edge_type]}
-        linkWidth={0.4} // Constant width for clean look
+        linkWidth={(link: any) => getEdgeWidth(
+          link.weight,
+          filteredEdgeWeightRange?.min ?? 0,
+          filteredEdgeWeightRange?.max ?? 0,
+        )}
         linkDirectionalParticles={0}
         linkDirectionalParticleWidth={0}
         
