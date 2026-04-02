@@ -42,5 +42,6 @@ export interface GraphData {
     nodeCount: number;
     edgeCount: number;
     edgeTypes: Record<string, string>;
+    clusterNames?: Record<string, string>;
   };
 }

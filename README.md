@@ -61,7 +61,21 @@ Your JSON file must include nodes and edges with the following structure:
       "edge_type_name": "retweet",
       "weight": 1.0
     }
-  ]
+  ],
+  "metadata": {
+    "nodeCount": 2,
+    "edgeCount": 1,
+    "edgeTypes": {
+      "0": "retweet",
+      "1": "reply",
+      "2": "mention"
+    },
+    "clusterNames": {
+      "0": "Core Amplifiers",
+      "1": "Journalists",
+      "-1": "Unclustered"
+    }
+  }
 }
 ```
 
@@ -95,6 +109,17 @@ Your JSON file must include nodes and edges with the following structure:
 | `edge_type` | number | 0=retweet, 1=reply, 2=mention |
 | `edge_type_name` | string | Human-readable edge type |
 | `weight` | number | Edge weight |
+
+### Optional Metadata Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `metadata.nodeCount` | number | Precomputed node count for reference |
+| `metadata.edgeCount` | number | Precomputed edge count for reference |
+| `metadata.edgeTypes` | object | Mapping of edge type ids to labels |
+| `metadata.clusterNames` | object | Optional mapping of cluster ids to display names |
+
+If `metadata.clusterNames` is present, the sidebar and selected-node panel use those names. Missing entries fall back to the default labels: `Unclustered` for `-1`, otherwise `Community <id>`.
 
 ## Visual Encoding
 

@@ -1,5 +1,5 @@
 // Utility functions for graph data processing
-import type { Node } from '../types/graph';
+import type { GraphData, Node } from '../types/graph';
 
 // Color palette for pre-computed communities (0-3 from CSV, -1 for unclustered)
 export const clusterColors: Record<string, string> = {
@@ -26,6 +26,17 @@ export const edgeTypeLabels: Record<number, string> = {
   0: 'Retweet',
   1: 'Reply',
   2: 'Mention',
+};
+
+export const getClusterDisplayName = (clusterId: string | number, metadata?: GraphData['metadata']): string => {
+  const clusterKey = String(clusterId);
+  const customName = metadata?.clusterNames?.[clusterKey]?.trim();
+
+  if (customName) {
+    return customName;
+  }
+
+  return clusterKey === '-1' ? 'Unclustered' : `Community ${clusterKey}`;
 };
 
 interface ClusterStats {

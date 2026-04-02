@@ -1,5 +1,5 @@
 import React from 'react';
-import { clusterColors, formatNumber, formatPercent } from '../utils/graphUtils';
+import { clusterColors, formatNumber, formatPercent, getClusterDisplayName } from '../utils/graphUtils';
 import type { GraphData, Node } from '../types/graph';
 
 interface ClusterStats {
@@ -104,7 +104,7 @@ const InfoPanel: React.FC<InfoPanelProps> = ({
               }} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: '13px', fontWeight: 'bold' }}>
-                  {clusterKey === '-1' ? 'Unclustered' : `Community ${clusterKey}`}
+                  {getClusterDisplayName(clusterKey, data.metadata)}
                 </div>
                 <div style={{ fontSize: '11px', color: '#6c757d' }}>
                   {stats.count} nodes • Avg degree: {stats.avgDegree.toFixed(1)}
@@ -149,7 +149,7 @@ const InfoPanel: React.FC<InfoPanelProps> = ({
                 marginRight: '6px',
               }} />
               <span style={{ fontSize: '13px' }}>
-                {(selectedNode.cluster ?? -1) === -1 ? 'Unclustered' : `Cluster ${selectedNode.cluster}`}
+                {getClusterDisplayName(selectedNode.cluster ?? -1, data.metadata)}
               </span>
             </div>
           </div>
