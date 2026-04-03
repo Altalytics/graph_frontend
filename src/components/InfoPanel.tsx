@@ -131,12 +131,20 @@ const InfoPanel: React.FC<InfoPanelProps> = ({
             Selected Node
           </strong>
           
-          <div style={{ marginBottom: '10px' }}>
-            <div style={{ fontSize: '12px', color: '#666', marginBottom: '3px' }}>User ID</div>
-            <div style={{ fontSize: '13px', fontFamily: 'monospace', wordBreak: 'break-all' }}>
-              {selectedNode.user_id}
+          {selectedNode.screen_name ?
+            <div style={{ marginBottom: '10px' }}>
+              <div style={{ fontSize: '12px', color: '#666', marginBottom: '3px' }}>Account Name</div>
+              <div style={{ fontSize: '13px', fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                {selectedNode.screen_name}
+              </div>
+            </div> :
+            <div style={{ marginBottom: '10px' }}>
+              <div style={{ fontSize: '12px', color: '#666', marginBottom: '3px' }}>User ID</div>
+              <div style={{ fontSize: '13px', fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                {selectedNode.user_id}
+              </div>
             </div>
-          </div>
+          }
           
           <div style={{ marginBottom: '10px' }}>
             <div style={{ fontSize: '12px', color: '#666', marginBottom: '3px' }}>Cluster</div>
