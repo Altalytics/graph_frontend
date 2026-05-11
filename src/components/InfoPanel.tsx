@@ -17,13 +17,15 @@ interface InfoPanelProps {
   onClusterSelect: (cluster: string | null) => void; // Allow deselecting by passing null
 }
 
-const InfoPanel: React.FC<InfoPanelProps> = ({ 
-  data, 
-  selectedNode, 
-  selectedCluster, 
-  clusterStats, 
-  onClusterSelect 
+const InfoPanel: React.FC<InfoPanelProps> = ({
+  data,
+  selectedNode,
+  selectedCluster,
+  clusterStats,
+  onClusterSelect
 }) => {
+  const communityLabels = data.metadata?.community_labels ?? {};
+
   // Calculate data quality metrics
   const nodesWithCausalImpact = data.nodes.filter(
     node => node.causal_impact !== null && node.causal_impact !== undefined && node.causal_impact > 0
@@ -104,8 +106,13 @@ const InfoPanel: React.FC<InfoPanelProps> = ({
               }} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: '13px', fontWeight: 'bold' }}>
-                  {clusterKey === '-1' ? 'Unclustered' : `Community ${clusterKey}`}
+                  {clusterKey === '-1' ? 'Unclustered' : (communityLabels[clusterKey] || `Community ${clusterKey}`)}
                 </div>
+                {clusterKey !== '-1' && communityLabels[clusterKey] && (
+                  <div style={{ fontSize: '10px', color: '#868e96', marginBottom: '2px' }}>
+                    Community {clusterKey}
+                  </div>
+                )}
                 <div style={{ fontSize: '11px', color: '#6c757d' }}>
                   {stats.count} nodes • Avg degree: {stats.avgDegree.toFixed(1)}
                 </div>
@@ -139,7 +146,7 @@ const InfoPanel: React.FC<InfoPanelProps> = ({
           </div>
           
           <div style={{ marginBottom: '10px' }}>
-            <div style={{ fontSize: '12px', color: '#666', marginBottom: '3px' }}>Cluster</div>
+            <div style={{ fontSize: '12px', color: '#666', marginBottom: '3px' }}>Community</div>
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <div style={{
                 width: '16px',
@@ -147,10 +154,18 @@ const InfoPanel: React.FC<InfoPanelProps> = ({
                 borderRadius: '50%',
                 background: clusterColors[String(selectedNode.cluster ?? -1)] || clusterColors['-1'],
                 marginRight: '6px',
+                flexShrink: 0,
               }} />
-              <span style={{ fontSize: '13px' }}>
-                {(selectedNode.cluster ?? -1) === -1 ? 'Unclustered' : `Cluster ${selectedNode.cluster}`}
-              </span>
+              <div>
+                <div style={{ fontSize: '13px', fontWeight: 600 }}>
+                  {(selectedNode.cluster ?? -1) === -1
+                    ? 'Unclustered'
+                    : (communityLabels[String(selectedNode.cluster)] || `Community ${selectedNode.cluster}`)}
+                </div>
+                {(selectedNode.cluster ?? -1) !== -1 && communityLabels[String(selectedNode.cluster)] && (
+                  <div style={{ fontSize: '11px', color: '#868e96' }}>Community {selectedNode.cluster}</div>
+                )}
+              </div>
             </div>
           </div>
           

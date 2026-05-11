@@ -7,12 +7,13 @@ export const clusterColors: Record<string, string> = {
   '1': '#2ca02c',    // Community 1 (Green)
   '2': '#ff7f0e',    // Community 2 (Orange)
   '3': '#1f77b4',    // Community 3 (Blue)
-  '4': '#8c564b',    // Community 4 (Brown/Tan) - if needed
-  '5': '#e377c2',    // Community 5 (Pink) - if needed
-  '6': '#7f7f7f',    // Community 6 (Grey) - if needed
-  '7': '#bcbd22',    // Community 7 (Olive Green) - if needed
-  '8': '#17becf',    // Community 8 (Cyan) - if needed
-  '-1': '#cacacaff'    // Unclustered/background nodes (Dark Grey)
+  '4': '#8c564b',    // Community 4 (Brown/Tan)
+  '5': '#e377c2',    // Community 5 (Pink)
+  '6': '#7f7f7f',    // Community 6 (Grey)
+  '7': '#bcbd22',    // Community 7 (Olive Green)
+  '8': '#17becf',    // Community 8 (Cyan)
+  '9': '#d62728',    // Community 9 (Red)
+  '-1': '#cacaca',   // Unclustered/background nodes
 };
 
 // Color mapping for edge types

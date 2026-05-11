@@ -32,6 +32,7 @@ interface GraphVisualizationProps {
  * - ✅ Lower poly spheres (16 segments vs 32)
  */
 const GraphVisualization3D: React.FC<GraphVisualizationProps> = ({ data }) => {
+  const communityLabels = data.metadata?.community_labels ?? {};
   const fgRef = useRef<any>(null);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [selectedCluster, setSelectedCluster] = useState<string | null>(null);
@@ -212,12 +213,15 @@ const GraphVisualization3D: React.FC<GraphVisualizationProps> = ({ data }) => {
         warmupTicks={100}
         
         nodeThreeObject={nodeThreeObjectMemo}
-        nodeLabel={node => `<div style="color: #333; background: rgba(255,255,255,0.9); padding: 5px; border-radius: 4px;">
-          <strong>${node.screen_name || node.user_id}</strong><br/>
-          Cluster: ${node.cluster}<br/>
-          Impact: ${(node.causal_impact || 0).toFixed(4)}<br/>
-          Degree: ${node.total_degree}
-        </div>`}
+        nodeLabel={node => {
+          const clusterKey = String(node.cluster ?? -1);
+          const label = clusterKey === '-1' ? 'Unclustered' : (communityLabels[clusterKey] || `Community ${clusterKey}`);
+          return `<div style="color: #333; background: rgba(255,255,255,0.9); padding: 6px 8px; border-radius: 4px; font-size: 13px; line-height: 1.5;">
+            <strong>${node.screen_name || node.user_id}</strong><br/>
+            <span style="color: #666; font-size: 11px;">${label}</span><br/>
+            Impact: ${(node.causal_impact || 0).toFixed(4)} &nbsp;•&nbsp; Degree: ${node.total_degree}
+          </div>`;
+        }}
         onNodeClick={handleNodeClick as any}
         onBackgroundClick={handleBackgroundClick}
         
