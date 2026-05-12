@@ -234,13 +234,13 @@ const GraphVisualizationD3: React.FC<Props> = ({ data, datasets, activeDataset, 
 
     // --- Node interactions ---
     nodeSel
-      .on('mouseover', (event, n) => {
+      .on('mouseover', (event, _n) => {
         d3.select(event.currentTarget).attr('stroke', 'white').attr('stroke-width', 2);
       })
       .on('mousemove', (event, n) => {
         setTooltip({ node: n, x: event.clientX, y: event.clientY });
       })
-      .on('mouseout', (event, n) => {
+      .on('mouseout', (event, _n) => {
         d3.select(event.currentTarget).attr('stroke', 'rgba(255,255,255,0.25)').attr('stroke-width', 0.6);
         setTooltip(null);
       })
@@ -299,18 +299,52 @@ const GraphVisualizationD3: React.FC<Props> = ({ data, datasets, activeDataset, 
 
   const nonZeroImpact = data.nodes.filter(n => (n.causal_impact ?? 0) > 0).length;
 
+  const BASE = 'https://altalytics.github.io/graph_frontend';
+  const NAV_H = 36;
+  const navLinkStyle: React.CSSProperties = {
+    color: '#aab4e8', textDecoration: 'none', padding: '2px 8px',
+    borderRadius: 4, background: 'rgba(255,255,255,0.06)', fontSize: '0.75rem',
+    whiteSpace: 'nowrap',
+  };
+  const navDivider = <span style={{ color: '#333', margin: '0 6px' }}>|</span>;
+  const navLabel = (t: string) => <span style={{ color: '#555', fontSize: '0.75rem' }}>{t}</span>;
+
   return (
     <div style={{ position: 'relative', width: '100%', height: '100vh', background: BG, overflow: 'hidden', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
 
+      {/* ── Top nav bar ── */}
+      <div style={{
+        position: 'absolute', top: 0, left: 0, right: 0, height: NAV_H, zIndex: 100,
+        background: '#0e0e24', borderBottom: `1px solid ${BORDER}`,
+        display: 'flex', alignItems: 'center', gap: 6, padding: '0 16px',
+        overflowX: 'auto',
+      }}>
+        <span style={{ color: '#4e6ef2', fontWeight: 700, fontSize: '0.8rem', marginRight: 4 }}>Altalytics</span>
+        {navDivider}
+        {navLabel('Community Report:')}
+        {(['actors','models','concepts','policy'] as const).map(ds => (
+          <a key={ds} href={`${BASE}/community_report_${ds}_10MAY.html`} style={navLinkStyle}>
+            {ds.charAt(0).toUpperCase() + ds.slice(1)}
+          </a>
+        ))}
+        {navDivider}
+        {navLabel('Narrative Trace:')}
+        {(['actors','models','concepts','policy'] as const).map(ds => (
+          <a key={ds} href={`${BASE}/narrative_trace_${ds}_11MAY.html`} style={navLinkStyle}>
+            {ds.charAt(0).toUpperCase() + ds.slice(1)}
+          </a>
+        ))}
+      </div>
+
       {/* Full-screen SVG */}
-      <svg ref={svgRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
+      <svg ref={svgRef} style={{ position: 'absolute', top: NAV_H, left: 0, right: 0, bottom: 0, width: '100%', height: `calc(100% - ${NAV_H}px)` }} />
 
       {/* ── Left sidebar ── */}
       <div style={{
-        position: 'absolute', top: 20, left: 20, width: SIDEBAR_WIDTH,
+        position: 'absolute', top: NAV_H + 20, left: 20, width: SIDEBAR_WIDTH,
         background: GLASS, border: `1px solid ${BORDER}`, borderRadius: 12,
         backdropFilter: 'blur(12px)', padding: '20px', color: 'white',
-        maxHeight: 'calc(100vh - 40px)', overflowY: 'auto',
+        maxHeight: `calc(100vh - ${NAV_H + 40}px)`, overflowY: 'auto',
         boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
       }}>
         <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 4, letterSpacing: '-0.3px' }}>
@@ -486,8 +520,8 @@ const GraphVisualizationD3: React.FC<Props> = ({ data, datasets, activeDataset, 
 
       {/* ── Selected node panel ── */}
       <div style={{
-        position: 'absolute', top: 0, right: 0, width: NODE_PANEL_WIDTH,
-        height: '100%', background: GLASS, borderLeft: `1px solid ${BORDER}`,
+        position: 'absolute', top: NAV_H, right: 0, width: NODE_PANEL_WIDTH,
+        height: `calc(100% - ${NAV_H}px)`, background: GLASS, borderLeft: `1px solid ${BORDER}`,
         backdropFilter: 'blur(12px)', padding: '28px 20px', color: 'white',
         transform: selectedNode ? 'translateX(0)' : `translateX(${NODE_PANEL_WIDTH}px)`,
         transition: 'transform 0.25s ease',
