@@ -1,11 +1,18 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import * as d3 from 'd3';
 import { clusterColors } from '../utils/graphUtils';
 import type { GraphData, Node } from '../types/graph';
 
+interface Dataset {
+  id: string;
+  label: string;
+}
+
 interface Props {
   data: GraphData;
-  onReset: () => void;
+  datasets: readonly Dataset[];
+  activeDataset: string;
+  onDatasetChange: (id: string) => void;
 }
 
 interface TooltipState {
@@ -27,12 +34,16 @@ const BG = '#07071a';
 const GLASS = 'rgba(10, 10, 30, 0.85)';
 const BORDER = 'rgba(255,255,255,0.08)';
 
-const GraphVisualizationD3: React.FC<Props> = ({ data, onReset }) => {
+const GraphVisualizationD3: React.FC<Props> = ({ data, datasets, activeDataset, onDatasetChange }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const simRef = useRef<d3.Simulation<SimNode, any> | null>(null);
+  const zoomRef = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null);
+  const simNodesRef = useRef<SimNode[]>([]);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [selectedCluster, setSelectedCluster] = useState<string | null>(null);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showResults, setShowResults] = useState(false);
 
   const communityLabels: Record<string, string> = data.metadata?.community_labels ?? {};
 
@@ -46,6 +57,28 @@ const GraphVisualizationD3: React.FC<Props> = ({ data, onReset }) => {
     });
     return stats;
   }, [data.nodes]);
+
+  const searchResults = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return [];
+    return data.nodes
+      .filter(n => n.screen_name?.toLowerCase().includes(q))
+      .slice(0, 8);
+  }, [searchQuery, data.nodes]);
+
+  const zoomToNode = useCallback((node: Node) => {
+    if (!svgRef.current || !zoomRef.current) return;
+    const simNode = simNodesRef.current.find(n => n.node_id === node.node_id);
+    if (!simNode) return;
+    const W = svgRef.current.clientWidth;
+    const H = svgRef.current.clientHeight;
+    const scale = 3;
+    const tx = W / 2 - scale * simNode.x;
+    const ty = H / 2 - scale * simNode.y;
+    d3.select(svgRef.current)
+      .transition().duration(600)
+      .call(zoomRef.current.transform, d3.zoomIdentity.translate(tx, ty).scale(scale));
+  }, []);
 
   const getRadius = useCallback((n: any): number => {
     const impact = n.causal_impact ?? 0;
@@ -119,6 +152,7 @@ const GraphVisualizationD3: React.FC<Props> = ({ data, onReset }) => {
       .on('zoom', e => root.attr('transform', e.transform));
 
     svg.call(zoom).on('dblclick.zoom', null);
+    zoomRef.current = zoom;
 
     // --- Links ---
     const linkSel = root.append('g')
@@ -171,6 +205,7 @@ const GraphVisualizationD3: React.FC<Props> = ({ data, onReset }) => {
       .alphaDecay(0.02);
 
     simRef.current = sim;
+    simNodesRef.current = nodes;
 
     sim.on('tick', () => {
       linkSel
@@ -281,8 +316,102 @@ const GraphVisualizationD3: React.FC<Props> = ({ data, onReset }) => {
         <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 4, letterSpacing: '-0.3px' }}>
           Network Analysis
         </div>
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginBottom: 18 }}>
+        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginBottom: 14 }}>
           Causal influence graph
+        </div>
+
+        {/* Dataset switcher */}
+        <div style={{
+          display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 18,
+        }}>
+          {datasets.map(ds => (
+            <button
+              key={ds.id}
+              onClick={() => onDatasetChange(ds.id)}
+              style={{
+                padding: '7px 4px', borderRadius: 6, border: 'none', cursor: 'pointer',
+                fontSize: 12, fontWeight: 600, transition: 'all 0.15s',
+                background: activeDataset === ds.id ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)',
+                color: activeDataset === ds.id ? 'white' : 'rgba(255,255,255,0.4)',
+                outline: activeDataset === ds.id ? '1px solid rgba(255,255,255,0.2)' : '1px solid transparent',
+              }}
+            >
+              {ds.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Search */}
+        <div style={{ position: 'relative', marginBottom: 18 }}>
+          <input
+            type="text"
+            placeholder="Search accounts…"
+            value={searchQuery}
+            onChange={e => { setSearchQuery(e.target.value); setShowResults(true); }}
+            onFocus={() => setShowResults(true)}
+            onBlur={() => setTimeout(() => setShowResults(false), 150)}
+            style={{
+              width: '100%', boxSizing: 'border-box',
+              padding: '9px 32px 9px 12px', borderRadius: 8,
+              background: 'rgba(255,255,255,0.07)', border: `1px solid ${BORDER}`,
+              color: 'white', fontSize: 13, outline: 'none',
+              fontFamily: 'inherit',
+            }}
+          />
+          {searchQuery ? (
+            <span
+              onClick={() => setSearchQuery('')}
+              style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', color: 'rgba(255,255,255,0.4)', fontSize: 14 }}
+            >✕</span>
+          ) : (
+            <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>⌕</span>
+          )}
+
+          {/* Results dropdown */}
+          {showResults && searchResults.length > 0 && (
+            <div style={{
+              position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
+              background: 'rgba(15,15,40,0.98)', border: `1px solid ${BORDER}`,
+              borderRadius: 8, marginTop: 4, overflow: 'hidden',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+            }}>
+              {searchResults.map(n => (
+                <div
+                  key={n.node_id}
+                  onMouseDown={() => {
+                    setSelectedNode(n);
+                    zoomToNode(n);
+                    setSearchQuery('');
+                    setShowResults(false);
+                  }}
+                  style={{
+                    padding: '9px 12px', cursor: 'pointer', borderBottom: `1px solid ${BORDER}`,
+                    transition: 'background 0.1s',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.07)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                >
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'white' }}>
+                    @{n.screen_name ?? n.user_id}
+                  </div>
+                  <div style={{ fontSize: 11, color: clusterColors[String(n.cluster)] ?? 'rgba(255,255,255,0.4)' }}>
+                    {communityLabels[String(n.cluster)] ?? `Community ${n.cluster}`}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {showResults && searchQuery.trim() && searchResults.length === 0 && (
+            <div style={{
+              position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
+              background: 'rgba(15,15,40,0.98)', border: `1px solid ${BORDER}`,
+              borderRadius: 8, marginTop: 4, padding: '10px 12px',
+              color: 'rgba(255,255,255,0.35)', fontSize: 12,
+            }}>
+              No accounts found
+            </div>
+          )}
         </div>
 
         {/* Summary stats */}
@@ -353,16 +482,6 @@ const GraphVisualizationD3: React.FC<Props> = ({ data, onReset }) => {
           </button>
         )}
 
-        <button
-          onClick={onReset}
-          style={{
-            width: '100%', marginTop: 16, padding: '10px',
-            background: 'transparent', border: `1px solid rgba(255,255,255,0.12)`,
-            borderRadius: 8, color: 'rgba(255,255,255,0.4)', fontSize: 12, cursor: 'pointer',
-          }}
-        >
-          Upload new file
-        </button>
       </div>
 
       {/* ── Selected node panel ── */}
