@@ -31,7 +31,7 @@ function App() {
     setError(null);
     setGraphData(null);
 
-    fetch(`/data/${activeDataset}.json`)
+    fetch(`${import.meta.env.BASE_URL}data/${activeDataset}.json`)
       .then(res => {
         if (!res.ok) throw new Error(`Dataset not found (${res.status})`);
         return res.json();
